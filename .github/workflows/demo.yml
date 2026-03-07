@@ -10,7 +10,7 @@ on:
         required: true
         type: boolean
       TEST:
-        required: true
+        required: false
         type: boolean
       DEPLOY:
         required: true
