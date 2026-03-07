@@ -30,6 +30,7 @@ jobs:
         run: echo "🔨 Building application for ${{ inputs.ENVIRONMENT }}"
 
   test:
+    needs: build
     if: ${{ inputs.TEST == true }}
     runs-on: ubuntu-latest
 
