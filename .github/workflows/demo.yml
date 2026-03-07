@@ -34,7 +34,7 @@ jobs:
     runs-on: ubuntu-latest
 
     environment:
-      name: ${{ inputs.ENVIRONMENT }}
+      name: test-${{ inputs.ENVIRONMENT }}
     
     steps:
       - name: Test Stage
@@ -45,7 +45,7 @@ jobs:
     runs-on: ubuntu-latest
 
     environment:
-      name: ${{ inputs.ENVIRONMENT }}
+      name: deploy-${{ inputs.ENVIRONMENT }}
 
     steps:
       - name: Deploy Stage
