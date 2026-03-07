@@ -32,6 +32,10 @@ jobs:
   test:
     if: ${{ inputs.TEST == true }}
     runs-on: ubuntu-latest
+
+    environment:
+      name: ${{ inputs.ENVIRONMENT }}
+    
     steps:
       - name: Test Stage
         run: echo "🧪 Running tests in ${{ inputs.ENVIRONMENT }}"
