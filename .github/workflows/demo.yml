@@ -41,6 +41,7 @@ jobs:
         run: echo "🧪 Running tests in ${{ inputs.ENVIRONMENT }}"
 
   deploy:
+    needs: test
     if: ${{ inputs.DEPLOY == true }}
     runs-on: ubuntu-latest
 
