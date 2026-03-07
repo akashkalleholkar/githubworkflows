@@ -39,6 +39,10 @@ jobs:
   deploy:
     if: ${{ inputs.DEPLOY == true }}
     runs-on: ubuntu-latest
+
+    environment:
+      name: ${{ inputs.ENVIRONMENT }}
+
     steps:
       - name: Deploy Stage
         run: |
