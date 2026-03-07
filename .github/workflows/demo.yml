@@ -3,9 +3,9 @@ name: Reusable Demo Workflow
 on:
   workflow_call:
     inputs:
-      #ENVIRONMENT:
-       # required: true
-        #type: string
+      ENVIRONMENT:
+        required: true
+        type: string
       BUILD:
         required: true
         type: boolean
