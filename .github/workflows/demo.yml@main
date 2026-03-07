@@ -1,0 +1,49 @@
+name: Reusable Demo Workflow
+
+on:
+  workflow_call:
+    inputs:
+      ENVIRONMENT:
+        required: true
+        type: string
+      BUILD:
+        required: true
+        type: boolean
+      TEST:
+        required: true
+        type: boolean
+      DEPLOY:
+        required: true
+        type: boolean
+
+    secrets:
+      DEMO_TOKEN:
+        required: true
+
+jobs:
+
+  build:
+    if: ${{ inputs.BUILD == true }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build Stage
+        run: echo "🔨 Building application for ${{ inputs.ENVIRONMENT }}"
+
+  test:
+    if: ${{ inputs.TEST == true }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Test Stage
+        run: echo "🧪 Running tests in ${{ inputs.ENVIRONMENT }}"
+
+  deploy:
+    if: ${{ inputs.DEPLOY == true }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy Stage
+        run: |
+          echo "🚀 Deploying to ${{ inputs.ENVIRONMENT }}"
+          echo "Using secret token"
+          echo "Secret length: ${#DEMO_TOKEN}"
+        env:
+          DEMO_TOKEN: ${{ secrets.DEMO_TOKEN }}
