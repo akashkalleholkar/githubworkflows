@@ -1,0 +1,53 @@
+name : simple cice pipeline 
+
+on : 
+  workflow_call:
+    inputs: 
+      pullimage:
+        required: false
+        type: boolean
+
+      tagimage:
+        required: false
+        type: boolean
+
+      pushimage:
+        required: false
+        type: boolean
+
+    secrets:
+      dockeruser: 
+        required: false
+
+
+jobs:
+  image pull
+    if ${{ inputs.pullimage == true }}
+    runs-on: ubuntu:latest
+    steps: 
+      -name : pull nginx image
+       run: sudo docker pull nginx
+ 
+  image tag
+    if ${{ inputs.tagimage == true }}
+    runs-on: ubuntu:latest
+    steps: 
+      -name : tag image
+       run: sudo docker tag nginx:latest coolakash/nginx:web
+  
+  image push
+    if ${{ inputs.pushimage == true }}
+    runs-on: ubuntu:latest
+    steps: 
+      -name : push image 
+       run: sudo docker push nginx:latest coolakash/nginx:web
+
+
+       
+
+
+
+        
+
+      
+                
