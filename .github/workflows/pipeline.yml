@@ -23,30 +23,20 @@ on:
         required: true
 
 jobs:
-
-  image_pull:
-    if: ${{ inputs.pullimage }}
+  docker_pipeline:
     runs-on: ubuntu-latest
+
     steps:
       - name: Pull nginx image
+        if: ${{ inputs.pullimage }}
         run: docker pull nginx
 
-  image_tag:
-    if: ${{ inputs.tagimage }}
-    runs-on: ubuntu-latest
-    needs: image_pull
-    steps:
-      - name: Tag image for ECR
-        run: |
-          docker tag nginx:latest 123456789012.dkr.ecr.ap-south-1.amazonaws.com/nginx:latest
-
-  image_push:
-    if: ${{ inputs.pushimage }}
-    runs-on: ubuntu-latest
-    needs: image_tag
-    steps:
+      - name: Tag image
+        if: ${{ inputs.tagimage }}
+        run: docker tag nginx:latest 123456789012.dkr.ecr.ap-south-1.amazonaws.com/nginx:latest
 
       - name: Configure AWS credentials
+        if: ${{ inputs.pushimage }}
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -54,9 +44,11 @@ jobs:
           aws-region: ap-south-1
 
       - name: Login to ECR
+        if: ${{ inputs.pushimage }}
         run: |
-          aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 123456789012.dkr.ecr.ap-south-1.amazonaws.com
+          aws ecr get-login-password --region ap-south-1 \
+          | docker login --username AWS --password-stdin 123456789012.dkr.ecr.ap-south-1.amazonaws.com
 
-      - name: Push image to ECR
-        run: |
-          docker push 123456789012.dkr.ecr.ap-south-1.amazonaws.com/nginx:latest
+      - name: Push image
+        if: ${{ inputs.pushimage }}
+        run: docker push 123456789012.dkr.ecr.ap-south-1.amazonaws.com/nginx:latest
