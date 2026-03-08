@@ -33,7 +33,7 @@ jobs:
 
       - name: Tag image
         if: ${{ inputs.tagimage }}
-        run: docker tag nginx:latest 123456789012.dkr.ecr.ap-south-1.amazonaws.com/nginx:latest
+        run: docker tag nginx:latest 851725608526.dkr.ecr.ap-south-1.amazonaws.com/coolakash:latest
 
       - name: Configure AWS credentials
         if: ${{ inputs.pushimage }}
@@ -51,4 +51,4 @@ jobs:
 
       - name: Push image
         if: ${{ inputs.pushimage }}
-        run: docker push 123456789012.dkr.ecr.ap-south-1.amazonaws.com/nginx:latest
+        run: docker push 851725608526.dkr.ecr.ap-south-1.amazonaws.com/coolakash:latest
