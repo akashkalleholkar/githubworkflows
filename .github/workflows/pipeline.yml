@@ -1,53 +1,62 @@
-name : simple cice pipeline 
+name: simple cice pipeline
 
-on : 
+on:
   workflow_call:
-    inputs: 
+    inputs:
       pullimage:
         required: false
         type: boolean
-
+        default: false
       tagimage:
         required: false
         type: boolean
-
+        default: false
       pushimage:
         required: false
         type: boolean
+        default: false
 
     secrets:
-      dockeruser: 
-        required: false
-
+      AWS_ACCESS_KEY_ID:
+        required: true
+      AWS_SECRET_ACCESS_KEY:
+        required: true
 
 jobs:
-  image pull
-    if ${{ inputs.pullimage == true }}
-    runs-on: ubuntu:latest
-    steps: 
-      -name : pull nginx image
-       run: sudo docker pull nginx
- 
-  image tag
-    if ${{ inputs.tagimage == true }}
-    runs-on: ubuntu:latest
-    steps: 
-      -name : tag image
-       run: sudo docker tag nginx:latest coolakash/nginx:web
-  
-  image push
-    if ${{ inputs.pushimage == true }}
-    runs-on: ubuntu:latest
-    steps: 
-      -name : push image 
-       run: sudo docker push nginx:latest coolakash/nginx:web
 
+  image_pull:
+    if: ${{ inputs.pullimage }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Pull nginx image
+        run: docker pull nginx
 
-       
+  image_tag:
+    if: ${{ inputs.tagimage }}
+    runs-on: ubuntu-latest
+    needs: image_pull
+    steps:
+      - name: Tag image for ECR
+        run: |
+          docker tag nginx:latest 123456789012.dkr.ecr.ap-south-1.amazonaws.com/nginx:latest
 
+  image_push:
+    if: ${{ inputs.pushimage }}
+    runs-on: ubuntu-latest
+    needs: image_tag
+    steps:
 
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-south-1
 
-        
+      - name: Login to ECR
+        run: |
+          aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 123456789012.dkr.ecr.ap-south-1.amazonaws.com
 
-      
-                
+      - name: Push image to ECR
+        run: |
+          docker push 123456789012.dkr.ecr.ap-south-1.amazonaws.com/nginx:latest
