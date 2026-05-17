@@ -57,6 +57,17 @@ on:
       CF_DISTRIBUTION_ID:
         required: false
         type: string
+      DB_HOST:
+        required: false
+        type: string
+      DB_PORT:
+        required: false
+        type: string
+        default: "3306"
+      PROJECT_ID:
+        required: false
+        type: string
+        default: "1"
     secrets:
       DOCKER_USERNAME:
         required: false
@@ -69,6 +80,12 @@ on:
       SNYK_TOKEN:
         required: false
       GUARDIAN_TOKEN:
+        required: false
+      DB_USER:
+        required: false
+      DB_PASSWORD:
+        required: false
+      DB_NAME:
         required: false
 
 env:
@@ -362,3 +379,65 @@ jobs:
             echo "[DRY-RUN] Would run aws cloudfront create-invalidation for distribution $ID"
           done
           echo "[DRY-RUN] CloudFront cache invalidation simulation complete"
+
+  post-deployment:
+    needs: deployment
+    if: inputs.DEPLOY == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve environment ID
+        shell: bash
+        run: |
+          ENVIRONMENT="${{ inputs.ENVIRONMENT }}"
+          if [[ "$ENVIRONMENT" == "IHD-DEV" ]]; then
+            ENV_ID=3
+          elif [[ "$ENVIRONMENT" == "IHD-UAT" ]]; then
+            ENV_ID=2
+          elif [[ "$ENVIRONMENT" == "IHD-PROD" ]]; then
+            ENV_ID=1
+          else
+            echo "Unknown ENVIRONMENT value: $ENVIRONMENT"
+            exit 1
+          fi
+          echo "ENV_ID=$ENV_ID" >> $GITHUB_ENV
+          echo "Resolved ENV_ID=$ENV_ID for ENVIRONMENT=$ENVIRONMENT"
+
+      - name: Resolve service name
+        shell: bash
+        run: |
+          SERVICE=$(echo "${{ github.event.repository.name }}" | tr '[:upper:]' '[:lower:]' | sed 's/_/-/g')
+          echo "SERVICE_NAME_CLEAN=$SERVICE" >> $GITHUB_ENV
+          echo "Resolved service name: $SERVICE"
+
+      - name: Insert deployment record into MySQL
+        shell: bash
+        run: |
+          DEPLOYED_AT=$(date -u +"%Y-%m-%d %H:%M:%S")
+          echo "Inserting deployment record..."
+          echo "  project_id  : ${{ inputs.PROJECT_ID }}"
+          echo "  environment_id: ${{ env.ENV_ID }}"
+          echo "  deployed_at : $DEPLOYED_AT"
+          echo "  service_name: ${{ env.SERVICE_NAME_CLEAN }}"
+          echo "  actor       : github-actions"
+          echo "  status      : success"
+
+          mysql \
+            --host="${{ inputs.DB_HOST }}" \
+            --port="${{ inputs.DB_PORT }}" \
+            --user="${{ secrets.DB_USER }}" \
+            --password="${{ secrets.DB_PASSWORD }}" \
+            "${{ secrets.DB_NAME }}" \
+            --execute="
+              INSERT INTO deployments
+                (project_id, environment_id, deployed_at, service_name, actor, status)
+              VALUES
+                (
+                  ${{ inputs.PROJECT_ID }},
+                  ${{ env.ENV_ID }},
+                  '$DEPLOYED_AT',
+                  '${{ env.SERVICE_NAME_CLEAN }}',
+                  'github-actions',
+                  'success'
+                );
+            "
+          echo "Deployment record inserted successfully"
