@@ -2,21 +2,21 @@ name: macm-ihd-java-service-demo
 
 on:
   workflow_call:
-    inputs: 
+    inputs:
       SAST_SCAN:
-        required: false 
+        required: false
         type: boolean
       SCA_SCAN:
-        required: false 
+        required: false
         type: boolean
       CONTAINER_SCAN:
-        required: false 
+        required: false
         type: boolean
       IAC_SCAN:
-        required: false 
+        required: false
         type: boolean
       CONTAINER_BUILD:
-        required: false 
+        required: false
         type: boolean
       AWS_REGION:
         required: false
@@ -66,17 +66,15 @@ on:
         required: false
       AWS_SECRET_ACCESS_KEY:
         required: false
-      SNYK_TOKEN: 
+      SNYK_TOKEN:
         required: false
       GUARDIAN_TOKEN:
         required: false
 
 env:
   BRANCH: ${{ github.ref_name }}
-  COMMIT_ID: $(git rev-parse HEAD)
   SERVICE_NAME: ${{ github.event.repository.name }}
   GUARDIAN_URL: guard.mirae-asset.co.in:8289
-  GIT_HASH: $(git rev-parse --short "$GITHUB_SHA")
   ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
   roleArn_uat: ${{ vars.ROLEARN_UAT }}
   docker_baseimg_ecr: ${{ vars.ECR_UAT }}
@@ -91,15 +89,15 @@ jobs:
 
       - name: SAST Scan [DRY-RUN]
         shell: bash
-        run: |-
+        run: |
           echo "[DRY-RUN] Starting SAST Scan..."
-          GUARDIAN_SERVICE_NAME=$(echo ${{ env.SERVICE_NAME }} | sed 's/_/-/g')
+          GUARDIAN_SERVICE_NAME=$(echo "${{ env.SERVICE_NAME }}" | sed 's/_/-/g')
           echo "GUARDIAN_SERVICE_NAME=$GUARDIAN_SERVICE_NAME" >> $GITHUB_ENV
-          echo "[DRY-RUN] GUARDIAN_SERVICE_NAME resolved to: $GUARDIAN_SERVICE_NAME"
-          echo "[DRY-RUN] Would run: semgrep scan --json > ${{ env.SERVICE_NAME }}-sast.json"
-          echo "[DRY-RUN] Would POST sast.json to Guardian URL: ${{ env.GUARDIAN_URL }}/api/v1/vulnerability"
-          echo "[DRY-RUN] integration_id=semgrep_sast | service_name=$GUARDIAN_SERVICE_NAME | branch=${{ env.BRANCH }}"
-          echo '{}' > ${{ env.SERVICE_NAME }}-sast.json  # Create dummy report file for artifact upload
+          echo "[DRY-RUN] GUARDIAN_SERVICE_NAME resolved to $GUARDIAN_SERVICE_NAME"
+          echo "[DRY-RUN] Would run semgrep scan and output to ${{ env.SERVICE_NAME }}-sast.json"
+          echo "[DRY-RUN] Would POST sast report to Guardian vulnerability API"
+          echo "[DRY-RUN] integration_id=semgrep_sast branch=${{ env.BRANCH }}"
+          echo '{}' > ${{ env.SERVICE_NAME }}-sast.json
 
       - name: Uploads
         uses: actions/upload-artifact@v4.0.0
@@ -116,19 +114,19 @@ jobs:
 
       - name: IAC Scan [DRY-RUN]
         shell: bash
-        run: |-
-          echo "[DRY-RUN] Would run: trivy config scan (scan-type=config, format=json)"
-          echo "[DRY-RUN] Output would be saved to: ${{ env.SERVICE_NAME }}-iac.json"
-          echo '{}' > ${{ env.SERVICE_NAME }}-iac.json  # Create dummy report file
+        run: |
+          echo "[DRY-RUN] Would run trivy config scan with format=json"
+          echo "[DRY-RUN] Output would be saved to ${{ env.SERVICE_NAME }}-iac.json"
+          echo '{}' > ${{ env.SERVICE_NAME }}-iac.json
 
       - name: IAC Scan API [DRY-RUN]
         shell: bash
-        run: |-
-          GUARDIAN_SERVICE_NAME=$(echo ${{ env.SERVICE_NAME }} | sed 's/_/-/g')
+        run: |
+          GUARDIAN_SERVICE_NAME=$(echo "${{ env.SERVICE_NAME }}" | sed 's/_/-/g')
           echo "GUARDIAN_SERVICE_NAME=$GUARDIAN_SERVICE_NAME" >> $GITHUB_ENV
-          echo "[DRY-RUN] GUARDIAN_SERVICE_NAME resolved to: $GUARDIAN_SERVICE_NAME"
-          echo "[DRY-RUN] Would POST iac.json to Guardian URL: ${{ env.GUARDIAN_URL }}/api/v1/vulnerability"
-          echo "[DRY-RUN] integration_id=trivy_iac | service_name=$GUARDIAN_SERVICE_NAME"
+          echo "[DRY-RUN] GUARDIAN_SERVICE_NAME resolved to $GUARDIAN_SERVICE_NAME"
+          echo "[DRY-RUN] Would POST iac report to Guardian vulnerability API"
+          echo "[DRY-RUN] integration_id=trivy_iac service_name=$GUARDIAN_SERVICE_NAME"
 
       - name: Uploads
         uses: actions/upload-artifact@v4.0.0
@@ -142,44 +140,49 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up JDK 21 (Attempt 1) [DRY-RUN]
+      - name: Set up JDK 21 Attempt 1 [DRY-RUN]
         id: setup_java_1
-        shell: bash
         continue-on-error: true
-        run: echo "[DRY-RUN] Would run: actions/setup-java@v4 with java-version=21, distribution=oracle (Attempt 1)"
+        shell: bash
+        run: |
+          echo "[DRY-RUN] Would setup JDK 21 oracle distribution - Attempt 1"
 
-      - name: Set up JDK 21 (Attempt 2) [DRY-RUN]
+      - name: Set up JDK 21 Attempt 2 [DRY-RUN]
         if: steps.setup_java_1.outcome == 'failure'
         id: setup_java_2
-        shell: bash
         continue-on-error: true
-        run: echo "[DRY-RUN] Would run: actions/setup-java@v4 with java-version=21, distribution=oracle (Attempt 2)"
+        shell: bash
+        run: |
+          echo "[DRY-RUN] Would setup JDK 21 oracle distribution - Attempt 2"
 
-      - name: Set up JDK 21 (Attempt 3) [DRY-RUN]
+      - name: Set up JDK 21 Attempt 3 [DRY-RUN]
         if: steps.setup_java_2.outcome == 'failure'
         id: setup_java_3
-        shell: bash
         continue-on-error: true
-        run: echo "[DRY-RUN] Would run: actions/setup-java@v4 with java-version=21, distribution=oracle (Attempt 3)"
+        shell: bash
+        run: |
+          echo "[DRY-RUN] Would setup JDK 21 oracle distribution - Attempt 3"
 
-      - name: Set up JDK 21 (Attempt 4) [DRY-RUN]
+      - name: Set up JDK 21 Attempt 4 [DRY-RUN]
         if: steps.setup_java_3.outcome == 'failure'
         id: setup_java_4
-        shell: bash
         continue-on-error: true
-        run: echo "[DRY-RUN] Would run: actions/setup-java@v4 with java-version=21, distribution=oracle (Attempt 4)"
+        shell: bash
+        run: |
+          echo "[DRY-RUN] Would setup JDK 21 oracle distribution - Attempt 4"
 
-      - name: Set up JDK 21 (Attempt 5) [DRY-RUN]
+      - name: Set up JDK 21 Attempt 5 [DRY-RUN]
         if: steps.setup_java_4.outcome == 'failure'
         shell: bash
-        run: echo "[DRY-RUN] Would run: actions/setup-java@v4 with java-version=21, distribution=oracle (Attempt 5)"
+        run: |
+          echo "[DRY-RUN] Would setup JDK 21 oracle distribution - Attempt 5"
 
       - name: Build with Maven [DRY-RUN]
         shell: bash
-        run: |-
-          echo "[DRY-RUN] Would run: mvn clean install -Dmaven.test.skip=true"
+        run: |
+          echo "[DRY-RUN] Would run mvn clean install"
           mkdir -p target
-          echo "dummy-artifact" > target/demo-app.jar  # Create dummy jar for artifact upload
+          echo "dummy-artifact" > target/demo-app.jar
 
       - name: Uploads
         uses: actions/upload-artifact@v4.0.0
@@ -194,7 +197,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Download Artifact if exists
+      - name: Download Artifact
         uses: actions/download-artifact@v4.1.0
         with:
           name: artifact-${{ env.ENVIRONMENT }}
@@ -202,16 +205,15 @@ jobs:
 
       - name: SCA Scan [DRY-RUN]
         shell: bash
-        run: |-
-          GUARDIAN_SERVICE_NAME=$(echo ${{ env.SERVICE_NAME }} | sed 's/_/-/g')
+        run: |
+          GUARDIAN_SERVICE_NAME=$(echo "${{ env.SERVICE_NAME }}" | sed 's/_/-/g')
           echo "GUARDIAN_SERVICE_NAME=$GUARDIAN_SERVICE_NAME" >> $GITHUB_ENV
-          echo "[DRY-RUN] GUARDIAN_SERVICE_NAME resolved to: $GUARDIAN_SERVICE_NAME"
-          echo "[DRY-RUN] Would run: snyk auth <SNYK_TOKEN>"
-          echo "[DRY-RUN] Would run: snyk config set org=${{ inputs.SNYK_ORG }}"
-          echo "[DRY-RUN] Would run: snyk test --json-file-output=${{ env.SERVICE_NAME }}-sca.json"
-          echo "[DRY-RUN] Would POST sca.json to Guardian URL: ${{ env.GUARDIAN_URL }}/api/v1/vulnerability"
-          echo "[DRY-RUN] integration_id=snyk_sca | service_name=$GUARDIAN_SERVICE_NAME"
-          echo '{}' > ${{ env.SERVICE_NAME }}-sca.json  # Create dummy report file
+          echo "[DRY-RUN] GUARDIAN_SERVICE_NAME resolved to $GUARDIAN_SERVICE_NAME"
+          echo "[DRY-RUN] Would run snyk auth and snyk test"
+          echo "[DRY-RUN] Would run snyk config set org=${{ inputs.SNYK_ORG }}"
+          echo "[DRY-RUN] Would POST sca report to Guardian vulnerability API"
+          echo "[DRY-RUN] integration_id=snyk_sca service_name=$GUARDIAN_SERVICE_NAME"
+          echo '{}' > ${{ env.SERVICE_NAME }}-sca.json
 
       - name: Uploads
         uses: actions/upload-artifact@v4.0.0
@@ -236,9 +238,10 @@ jobs:
 
       - name: Docker Hub Login [DRY-RUN]
         shell: bash
-        run: echo "[DRY-RUN] Would run: docker login --username <DOCKER_USERNAME> --password-stdin"
+        run: |
+          echo "[DRY-RUN] Would run docker login with DOCKER_USERNAME and DOCKER_PASSWORD"
 
-      - name: Download Artifact if exists
+      - name: Download Artifact
         uses: actions/download-artifact@v4.1.0
         with:
           name: artifact-${{ env.ENVIRONMENT }}
@@ -246,24 +249,24 @@ jobs:
 
       - name: Docker Build [DRY-RUN]
         shell: bash
-        run: |-
-          ecr_repo_name=$(echo ${{ env.SERVICE_NAME }} | tr '[:upper:]' '[:lower:]' | sed 's/_/-/g')
+        run: |
+          ecr_repo_name=$(echo "${{ env.SERVICE_NAME }}" | tr '[:upper:]' '[:lower:]' | sed 's/_/-/g')
           echo "ecr_repo_name=$ecr_repo_name" >> $GITHUB_ENV
-          echo "[DRY-RUN] Would assume role: ${{ env.roleArn_uat }}"
-          echo "[DRY-RUN] Would run: aws ecr get-login-password | docker login --username AWS ${{ env.docker_baseimg_ecr }}"
-          echo "[DRY-RUN] Would run: docker build --build-arg docker_baseimg_ecr=${{ env.docker_baseimg_ecr }} -f deployment-config/Dockerfile -t ${{ inputs.ecr }}/$ecr_repo_name:${{ env.GIT_HASH }} ."
+          echo "[DRY-RUN] Would assume cross account role for UAT ECR base image login"
+          echo "[DRY-RUN] Would run docker build using deployment-config/Dockerfile"
+          echo "[DRY-RUN] Image would be tagged as $ecr_repo_name with GIT_HASH"
 
       - name: AWS Login [DRY-RUN]
         shell: bash
-        run: |-
-          echo "[DRY-RUN] Would assume role: ${{ env.roleArn }}"
+        run: |
+          echo "[DRY-RUN] Would assume role ${{ env.roleArn }}"
           echo "[DRY-RUN] Would export temporary AWS credentials to GITHUB_ENV"
 
-      - name: Image push to ECR [DRY-RUN]
+      - name: Image Push to ECR [DRY-RUN]
         shell: bash
-        run: |-
-          echo "[DRY-RUN] Would run: aws ecr get-login-password | docker login --username AWS ${{ inputs.ecr }}"
-          echo "[DRY-RUN] Would run: docker push ${{ inputs.ecr }}/$ecr_repo_name:${{ env.GIT_HASH }}"
+        run: |
+          echo "[DRY-RUN] Would run aws ecr get-login-password and docker login"
+          echo "[DRY-RUN] Would push image to ECR ${{ inputs.ecr }}"
 
   container-scan:
     needs: [container-build-push]
@@ -281,24 +284,22 @@ jobs:
 
       - name: Container Scan [DRY-RUN]
         shell: bash
-        run: |-
-          echo "[DRY-RUN] Would assume role: ${{ env.roleArn }}"
-          IMAGE_REF=${{ inputs.ecr }}/$(echo ${{ github.event.repository.name }} | tr '[:upper:]' '[:lower:]' | sed 's/_/-/g'):${{ env.GIT_HASH }}
-          echo "[DRY-RUN] IMAGE_REF resolved to: $IMAGE_REF"
-          echo "[DRY-RUN] Would run: aws ecr get-login-password | docker login ${{ inputs.ecr }}"
-          echo "[DRY-RUN] Would run: docker pull $IMAGE_REF"
-          echo "[DRY-RUN] Would run: trivy image $IMAGE_REF --format json > ${{ env.SERVICE_NAME }}-container.json"
-          echo "[DRY-RUN] Retry logic (max 10 attempts) would be applied around trivy scan"
-          echo '{}' > ${{ env.SERVICE_NAME }}-container.json  # Create dummy report file
+        run: |
+          echo "[DRY-RUN] Would assume role ${{ env.roleArn }}"
+          ecr_repo_name=$(echo "${{ github.event.repository.name }}" | tr '[:upper:]' '[:lower:]' | sed 's/_/-/g')
+          echo "[DRY-RUN] IMAGE_REF would be ${{ inputs.ecr }}/$ecr_repo_name with GIT_HASH"
+          echo "[DRY-RUN] Would run docker pull on the image"
+          echo "[DRY-RUN] Would run trivy image scan with retry logic max 10 attempts"
+          echo '{}' > ${{ env.SERVICE_NAME }}-container.json
 
       - name: Container Scan API [DRY-RUN]
         shell: bash
-        run: |-
-          GUARDIAN_SERVICE_NAME=$(echo ${{ env.SERVICE_NAME }} | sed 's/_/-/g')
+        run: |
+          GUARDIAN_SERVICE_NAME=$(echo "${{ env.SERVICE_NAME }}" | sed 's/_/-/g')
           echo "GUARDIAN_SERVICE_NAME=$GUARDIAN_SERVICE_NAME" >> $GITHUB_ENV
-          echo "[DRY-RUN] GUARDIAN_SERVICE_NAME resolved to: $GUARDIAN_SERVICE_NAME"
-          echo "[DRY-RUN] Would POST container.json to Guardian URL: ${{ env.GUARDIAN_URL }}/api/v1/vulnerability"
-          echo "[DRY-RUN] integration_id=trivy_container | service_name=$GUARDIAN_SERVICE_NAME"
+          echo "[DRY-RUN] GUARDIAN_SERVICE_NAME resolved to $GUARDIAN_SERVICE_NAME"
+          echo "[DRY-RUN] Would POST container scan report to Guardian vulnerability API"
+          echo "[DRY-RUN] integration_id=trivy_container service_name=$GUARDIAN_SERVICE_NAME"
 
       - name: Uploads
         uses: actions/upload-artifact@v4.0.0
@@ -308,8 +309,8 @@ jobs:
 
   deployment:
     needs: container-build-push
-    runs-on: ubuntu-latest
     if: inputs.DEPLOY == true
+    runs-on: ubuntu-latest
     environment: ${{ inputs.ENVIRONMENT }}
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -321,44 +322,43 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: deploy [DRY-RUN]
+      - name: Deploy [DRY-RUN]
         shell: bash
-        run: |-
-          echo "[DRY-RUN] Would assume role: ${{ env.roleArn }}"
-          release=$(echo ${{ github.event.repository.name }} | tr '[:upper:]' '[:lower:]' | sed 's/_/-/g')
-          echo "[DRY-RUN] Helm release name would be: $release"
-          echo "[DRY-RUN] Would run: aws eks update-kubeconfig --name ${{ inputs.CLUSTER_NAME }} --region $AWS_REGION"
-          ENVIRONMENT=${{ inputs.ENVIRONMENT }}
+        run: |
+          echo "[DRY-RUN] Would assume role ${{ env.roleArn }}"
+          release=$(echo "${{ github.event.repository.name }}" | tr '[:upper:]' '[:lower:]' | sed 's/_/-/g')
+          echo "[DRY-RUN] Helm release name would be $release"
+          echo "[DRY-RUN] Would run aws eks update-kubeconfig for cluster ${{ inputs.CLUSTER_NAME }}"
+          ENVIRONMENT="${{ inputs.ENVIRONMENT }}"
           if [[ "$ENVIRONMENT" == "IHD-DEV" ]]; then
-            VALUES="dev-values.yaml"; tag=${{ env.GIT_HASH }};
+            VALUES="dev-values.yaml"
           elif [[ "$ENVIRONMENT" == "IHD-PROD" ]]; then
-            VALUES="prod-values.yaml"; tag=${{ env.GIT_HASH }}-uat-verified;
+            VALUES="prod-values.yaml"
           elif [[ "$ENVIRONMENT" == "IHD-UAT" ]]; then
-            VALUES="uat-values.yaml"; tag=${{ env.GIT_HASH }};
+            VALUES="uat-values.yaml"
           fi
-          echo "[DRY-RUN] Selected values file: $VALUES | image tag: $tag"
-          echo "[DRY-RUN] Would run: helm upgrade --install --values deployment-config/helm-chart/environment/$VALUES --set image.repository=${{ inputs.ecr }}/$release --set image.tag=$tag --set image.pullPolicy=Always $release deployment-config/helm-chart -n ${{ inputs.NAMESPACE }}"
-          echo "[DRY-RUN] Deployment simulation complete."
+          echo "[DRY-RUN] Selected values file $VALUES"
+          echo "[DRY-RUN] Would run helm upgrade --install for namespace ${{ inputs.NAMESPACE }}"
+          echo "[DRY-RUN] Deployment simulation complete"
 
   cloudfront:
     needs: deployment
+    if: inputs.CF_INVALIDATE_CACHE == true
     runs-on: ubuntu-latest
-    if: ${{ inputs.CF_INVALIDATE_CACHE }}
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_REGION: ${{ inputs.AWS_REGION }}
-      ecr: ${{ inputs.ecr }}
       roleArn: ${{ inputs.CF_ROLEARN }}
     steps:
       - name: Invalidate Cache [DRY-RUN]
         shell: bash
-        run: |-
-          echo "[DRY-RUN] Would wait: sleep 60"
-          echo "[DRY-RUN] Would assume role: ${{ env.roleArn }}"
-          echo "[DRY-RUN] CF_DISTRIBUTION_ID(s): ${{ inputs.CF_DISTRIBUTION_ID }}"
+        run: |
+          echo "[DRY-RUN] Would wait 60 seconds before invalidation"
+          echo "[DRY-RUN] Would assume role ${{ env.roleArn }}"
+          echo "[DRY-RUN] CF_DISTRIBUTION_ID(s) ${{ inputs.CF_DISTRIBUTION_ID }}"
           IFS=',' read -r -a DISTRIBUTION_IDS <<< "${{ inputs.CF_DISTRIBUTION_ID }}"
           for ID in "${DISTRIBUTION_IDS[@]}"; do
-            echo "[DRY-RUN] Would run: aws cloudfront create-invalidation --distribution-id $ID --paths '/*'"
+            echo "[DRY-RUN] Would run aws cloudfront create-invalidation for distribution $ID"
           done
-          echo "[DRY-RUN] CloudFront cache invalidation simulation complete."
+          echo "[DRY-RUN] CloudFront cache invalidation simulation complete"
