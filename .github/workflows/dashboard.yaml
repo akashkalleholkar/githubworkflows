@@ -145,29 +145,29 @@ jobs:
       - name: Set up JDK 21 (Attempt 1) [DRY-RUN]
         id: setup_java_1
         shell: bash
-        run: echo "[DRY-RUN] Would run: actions/setup-java@v4 with java-version=21, distribution=oracle (Attempt 1)"
         continue-on-error: true
+        run: echo "[DRY-RUN] Would run: actions/setup-java@v4 with java-version=21, distribution=oracle (Attempt 1)"
 
       - name: Set up JDK 21 (Attempt 2) [DRY-RUN]
         if: steps.setup_java_1.outcome == 'failure'
         id: setup_java_2
         shell: bash
-        run: echo "[DRY-RUN] Would run: actions/setup-java@v4 with java-version=21, distribution=oracle (Attempt 2)"
         continue-on-error: true
+        run: echo "[DRY-RUN] Would run: actions/setup-java@v4 with java-version=21, distribution=oracle (Attempt 2)"
 
       - name: Set up JDK 21 (Attempt 3) [DRY-RUN]
         if: steps.setup_java_2.outcome == 'failure'
         id: setup_java_3
         shell: bash
-        run: echo "[DRY-RUN] Would run: actions/setup-java@v4 with java-version=21, distribution=oracle (Attempt 3)"
         continue-on-error: true
+        run: echo "[DRY-RUN] Would run: actions/setup-java@v4 with java-version=21, distribution=oracle (Attempt 3)"
 
       - name: Set up JDK 21 (Attempt 4) [DRY-RUN]
         if: steps.setup_java_3.outcome == 'failure'
         id: setup_java_4
         shell: bash
-        run: echo "[DRY-RUN] Would run: actions/setup-java@v4 with java-version=21, distribution=oracle (Attempt 4)"
         continue-on-error: true
+        run: echo "[DRY-RUN] Would run: actions/setup-java@v4 with java-version=21, distribution=oracle (Attempt 4)"
 
       - name: Set up JDK 21 (Attempt 5) [DRY-RUN]
         if: steps.setup_java_4.outcome == 'failure'
